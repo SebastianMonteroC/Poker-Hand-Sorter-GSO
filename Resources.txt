@@ -1,0 +1,5 @@
+
+
+Ejemplo de algortimo en python para PSO Parallel Swarm Particle
+https://medium.com/analytics-vidhya/implementing-particle-swarm-optimization-pso-algorithm-in-python-9efc2eb179a6
+
