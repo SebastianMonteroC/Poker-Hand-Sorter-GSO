@@ -123,7 +123,7 @@ def getValores(argv):
     
     return float(r), float(g), float(s), float(i), float(l), float(k), float(m) #Retorna el valor para ser usado
 
-#Función principal
+#Función principal para mis panas
 def main(argv):
     comm = MPI.COMM_WORLD #Comunicador
     pid = comm.rank       #Proceso
