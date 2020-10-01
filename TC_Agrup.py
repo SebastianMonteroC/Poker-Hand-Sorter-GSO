@@ -55,31 +55,32 @@ class Gusano:
         self.intraD = intraD
     
 
-class Lector:
-    #Constructor de la clase con 2 atributos
-    #data = np.array | self.fileString = str(data)
-    def __init__(self):
-        self.data = []
-        self.fileString = []
     
-    #Carga los datos de un archivo de texto y los parsea para crear un arreglo numpy
-    def cargarDatos(self):
-        file = open("poker-hand-training-true.data", "r")
-        for line in file:
-            cLine = line.split(",")
-            fila = []
-            for i in range(0,10):
-                fila.append(int(cLine[i]))
-            self.data.append(fila)
-        file.close()
-        self.data = np.array(self.data)
-        return self.data
+#Carga los datos de un archivo de texto y los parsea para crear un arreglo numpy
+def cargarDatos():
+    data = []
+    file = open("poker-hand-training-true.data", "r")
+    lineas = 0
+    for line in file:
+        lineas += 1
+        cLine = line.split(",")
+        fila = []
+        for i in range(0,10):
+            fila.append(int(cLine[i]))
+        data.append(fila)
+    file.close()
+    data = np.array(data)
+    #print(self.data[1])
+    return data, lineas
 
 #Genera las listas invertidas
 def generarListaInvertida(data):
     for i in range(len(data)):
         for j in range(len(data[0])):
             pass
+
+def fitness(gusanos):  
+    pass
 
 
 #Se encarga de recibir el valor de los parámetros por consola
@@ -93,7 +94,7 @@ def getValores(argv):
     l = ""
     k = ""
     m = ""
-
+    
     try:
         #Se guardan en un tupla la etiqueta(opt) y el valor (arg)
         opts, args = getopt.getopt(argv, "h:r:g:s:i:l:k:m:", ["H=","R=","G=","S=","I=","L=","K=","M="]) #Para agragar parámetros se debe modificar el parámetro "h:r:" -> "h:r:a:b:c:"... y la lista ["H=","R="] -> ["H=","R=","A=","B=","C="]
@@ -134,14 +135,33 @@ def main(argv):
     L = 0                 #Valor inicial de luciferina en los gusanos
     K = 0                 #Cantidad de clases a encontrar
     M = 0                 #Tasa de gusanos por dato
+    data = []             #Conjunto de manos
+    cant_gusanos = 0
+    gusanos = []
 
     if pid == 0:
         #R, G, S, I, L, K, M = getValores(argv) #Guardar un valor dado por consola
-        pass
+        data, cant_datos = cargarDatos()
+        cant_gusanos = int(cant_datos * 0.9)
+    
+    data, cant_gusanos = comm.bcast(data,cant_gusanos)
 
-    g = Gusano()
-    f = Lector()
-    f.cargarDatos()
+    inicio = pid * cant_gusanos / size
+    final = cant_gusanos / size + inicio
+
+    for i in range(inicio, final):
+        g = Gusano(5.0)
+        gusanos.append(g)
+
+    gusanos = comm.reduce(gusanos,op = MPI.SUM)
+
+    if pid == 0:
+        print(len(gusanos))
+
+    
+
+
+
 
     
     if pid == 0:
