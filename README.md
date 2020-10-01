@@ -1,3 +1,6 @@
 # Proyecto-Paralelo-1-MPI4PY
 Data grouping through Glowworm Swarm Optimization.
 Ver PDF
+
+
+POKER HAND GROUPING THROUGH GSO WILL ALLOW FOR EFFICIENT SORTING DEPENDING ON THE TYPE.
