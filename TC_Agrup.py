@@ -123,7 +123,7 @@ def getValores(argv):
     
     return float(r), float(g), float(s), float(i), float(l), float(k), float(m) #Retorna el valor para ser usado
 
-#Función principal para mis panas
+#Función principal
 def main(argv):
     comm = MPI.COMM_WORLD #Comunicador
     pid = comm.rank       #Proceso
@@ -144,10 +144,10 @@ def main(argv):
         data, cant_datos = cargarDatos()
         cant_gusanos = int(cant_datos * 0.9)
     
-    data, cant_gusanos = comm.bcast(data,cant_gusanos)
+    data,cant_gusanos = comm.bcast((data,cant_gusanos), root = 0)
 
-    inicio = pid * cant_gusanos / size
-    final = cant_gusanos / size + inicio
+    inicio = int(pid * cant_gusanos / size)
+    final = int(cant_gusanos / size + inicio)
 
     for i in range(inicio, final):
         g = Gusano(5.0)
@@ -156,7 +156,7 @@ def main(argv):
     gusanos = comm.reduce(gusanos,op = MPI.SUM)
 
     if pid == 0:
-        print(len(gusanos))
+        print(len(gusanos), " ", inicio, " ", final)
 
     
 
