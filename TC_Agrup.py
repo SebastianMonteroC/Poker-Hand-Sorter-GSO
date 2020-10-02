@@ -96,15 +96,15 @@ def generarListaInvertida(data): #[4][13][5]
                 d2.append(0)
             d1.append(d2)
         listaInvertida.append(d1)
-    for i in range(1,4 + 1):
-        for j in range(1,13 + 1):
+    for i in range(4):
+        for j in range(13):
             for k in range(0,10,2):
                 listaIndices = []
                 for l in range(len(data)):
-                    if data[l][k] == i and data[l][k+1] == j :
+                    if data[l][k] == i+1 and data[l][k+1] == j+1 :
                         listaIndices.append(l)
-                listaInvertida[i-1][j-1][int((k + 1) / 2)] = listaIndices
-
+                listaInvertida[i][j][int((k + 1) / 2)] = listaIndices
+    
     verListaInvertida(listaInvertida)
                 
    
@@ -119,7 +119,7 @@ def verListaInvertida(lInv):
     for i in range(0,4):
         for j in range(0,13):
             for k in range(0,4):
-                print("[",i,"]","[",j,"]","[",k,"] = ", str(lInv[i][j][k]))
+                print("[",i+1,"]","[",j+1,"]","[",k+1,"] = ", str(lInv[i][j][k]))
 
 
     
