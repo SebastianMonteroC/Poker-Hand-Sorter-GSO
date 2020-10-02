@@ -11,6 +11,7 @@ Descripción del proyecto:
 from mpi4py import MPI
 import sys, getopt
 import numpy as np
+import random
 
 #Atributos globales
 DIMENSION = 10
@@ -19,10 +20,21 @@ DIMENSION = 10
 class Gusano:
     def __init__(self,L):
         self.nLuciferina = L
-        self.pos = np.random.randint(1,13,(DIMENSION))
+        self.pos = self.randomPos()
         self.vAdaptacion = 0.0
         self.cCubierto = [] #Modificar por un numpy array
         self.intraD = 0.0
+
+    def randomPos(self):
+        rPos = []
+        for i in range (1,11):
+            if i % 2 == 0:
+                rPos.append(random.uniform(1,4))
+            else:
+                rPos.append(random.uniform(1,13))
+        rPos = np.array(rPos)
+
+        return rPos
 
     def getNLuciferina(self):
         return self.nLuciferina
@@ -74,10 +86,43 @@ def cargarDatos():
     return data, lineas
 
 #Genera las listas invertidas
-def generarListaInvertida(data):
-    for i in range(len(data)):
-        for j in range(len(data[0])):
-            pass
+def generarListaInvertida(data): #[4][13][5]
+    listaInvertida = []
+    for i in range(4):
+        d1 = []
+        for j in range(13):
+            d2 = []
+            for k in range(5):
+                d2.append(0)
+            d1.append(d2)
+        listaInvertida.append(d1)
+    for i in range(1,4 + 1):
+        for j in range(1,13 + 1):
+            for k in range(0,10,2):
+                listaIndices = []
+                for l in range(len(data)):
+                    if data[l][k] == i and data[l][k+1] == j :
+                        listaIndices.append(l)
+                listaInvertida[i-1][j-1][int((k + 1) / 2)] = listaIndices
+
+    verListaInvertida(listaInvertida)
+                
+   
+    
+
+
+    # verListaInvertida(listaInvertida)
+
+    return listaInvertida
+
+def verListaInvertida(lInv):
+    for i in range(0,4):
+        for j in range(0,13):
+            for k in range(0,4):
+                print("[",i,"]","[",j,"]","[",k,"] = ", str(lInv[i][j][k]))
+
+
+    
 
 def fitness(gusanos):  
     pass
@@ -143,20 +188,24 @@ def main(argv):
         #R, G, S, I, L, K, M = getValores(argv) #Guardar un valor dado por consola
         data, cant_datos = cargarDatos()
         cant_gusanos = int(cant_datos * 0.9)
+
+        generarListaInvertida(data)
     
     data,cant_gusanos = comm.bcast((data,cant_gusanos), root = 0)
 
     inicio = int(pid * cant_gusanos / size)
     final = int(cant_gusanos / size + inicio)
-
+    print(inicio, " ", final)
     for i in range(inicio, final):
         g = Gusano(5.0)
         gusanos.append(g)
 
     gusanos = comm.reduce(gusanos,op = MPI.SUM)
 
-    if pid == 0:
-        print(len(gusanos), " ", inicio, " ", final)
+    # if pid == 0:
+    #     for i in gusanos:
+    #         print(i.getPos())
+    #     print(len(gusanos), " ", inicio, " ", final)
 
     
 
