@@ -91,7 +91,7 @@ def cargarDatos():
     return data, lineas
 
 #Genera las listas invertidas
-def generarListaInvertida(data,proc,size): #[4][13][5]
+def generarListaInvertida(data): #[4][13][5]
     listaInvertida = []
 
     for i in range(4):
@@ -209,7 +209,7 @@ def main(argv):
         g = Gusano(5.0,randomPos(pid,size))
         gusanos.append(g)
 
-    generarListaInvertida(data,pid,size)
+    generarListaInvertida(data)
     
 
     gusanos = comm.reduce(gusanos,op = MPI.SUM)
