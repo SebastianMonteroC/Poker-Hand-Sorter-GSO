@@ -58,18 +58,11 @@ class Gusano:
     
 def randomPos(proc,size):
         rPos = []
-        init_i = int(proc * 4 / size + 1)
-        end_i = int((4 / size + init_i) - 1)
-
-        init_j = int(proc * 13 / size + 1)
-        end_j = int(13 / size + init_j)
-
-
         for i in range (1,11):
             if i % 2 != 0:
-                rPos.append(random.uniform(init_i,end_i))
+                rPos.append(random.uniform(1,4))
             else:
-                rPos.append(random.uniform(init_j,end_j))
+                rPos.append(random.uniform(1,13))
         rPos = np.array(rPos)
 
         return rPos
@@ -188,7 +181,7 @@ def main(argv):
         cant_gusanos = int(cant_datos * 0.9)
 
         
-    generarListaInvertida(data,pid,size)
+    
     
     data,cant_gusanos = comm.bcast((data,cant_gusanos), root = 0)
 
@@ -196,14 +189,6 @@ def main(argv):
     final = int(cant_gusanos / size + inicio)
     # print(inicio, " ", final)
     
-    init_i = math.floor(pid * 4 / size + 1)
-    end_i = math.ceil(4 * (pid + 1) / size)
-
-    init_j = int(pid * 13 / size + 1)
-    end_j = int(13 * (pid + 1) / size)
-    print("Proc = ",pid)
-    print(init_i, "-", end_i)
-    print(init_j, "-", end_j)
     for i in range(inicio, final):
         
         g = Gusano(5.0,randomPos(pid,size))
