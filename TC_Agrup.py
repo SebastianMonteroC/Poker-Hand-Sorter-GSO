@@ -17,6 +17,7 @@ import math
 #Atributos globales
 DIMENSION = 10
 
+
 #Clase Gusano con X atributos
 class Gusano:
     def __init__(self,L,pos):
@@ -25,6 +26,25 @@ class Gusano:
         self.vAdaptacion = 0.0
         self.cCubierto = [] #Modificar por un numpy array
         self.intraD = 0.0
+
+    def sacarConjuntoCubierto(self,r,listaInv):
+        conjuntoFinal = []
+        for i in range(0,10,2):
+            minX = math.ceil(self.pos[i] - r)
+            maxX = math.floor(self.pos[i] + r)
+            minY = math.ceil(self.pos[i+1] - r)
+            maxY = math.floor(self.pos[i+1] + r)
+            conjuntoAux = []
+            for j in range(minX,maxX+1):
+                for k in range(minY,maxY+1):
+                    conjuntoAux.extend(listaInv[j][k][int((i+1)/2)])
+            if(len(conjuntoFinal) == 0):
+                conjuntoAux = conjuntoFinal
+            else:
+                conjuntoFinal = np.intersect1d(conjuntoFinal,conjuntoAux)
+    
+    def pruebaTiempo(self,lista):
+        print("sumadre")
 
     def getNLuciferina(self):
         return self.nLuciferina
@@ -56,6 +76,12 @@ class Gusano:
     def setIntraD(self, intraD):
         self.intraD = intraD
     
+def distanciaEuc(pos1,pos2):
+    distancia = 0.0
+    for i in range(DIMENSION):
+        distancia += math.sqrt(pow((pos1[i] - pos2[i]),2))
+    return distancia
+
 def randomPos(proc,size):
         rPos = []
         for i in range (1,11):
@@ -112,8 +138,6 @@ def verListaInvertida(lInv):
             for k in range(0,4):
                 print("[",i+1,"]","[",j+1,"]","[",k+1,"] = ", str(lInv[i][j][k]))
 
-
-    
 
 def fitness(gusanos):  
     pass
@@ -174,16 +198,16 @@ def main(argv):
     data = []             #Conjunto de manos
     cant_gusanos = 0
     gusanos = []
+    listaInv = []
 
     if pid == 0:
         #R, G, S, I, L, K, M = getValores(argv) #Guardar un valor dado por consola
         data, cant_datos = cargarDatos()
         cant_gusanos = int(cant_datos * 0.9)
-
-        
+        listaInv = generarListaInvertida(data)
     
+    data,cant_gusanos,listaInv = comm.bcast((data,cant_gusanos,listaInv), root = 0)
     
-    data,cant_gusanos = comm.bcast((data,cant_gusanos), root = 0)
 
     inicio = int(pid * cant_gusanos / size)
     final = int(cant_gusanos / size + inicio)
@@ -194,21 +218,16 @@ def main(argv):
         g = Gusano(5.0,randomPos(pid,size))
         gusanos.append(g)
 
-    generarListaInvertida(data)
+    
     
 
     gusanos = comm.reduce(gusanos,op = MPI.SUM)
+    
 
     # if pid == 0:
     #     for i in gusanos:
     #         print(i.getPos())
     #     print(len(gusanos), " ", inicio, " ", final)
 
-
-    if pid == 0:
-        #print(R, " ", G, " ", S, " ", I, " ", L, " ", K, " ",M)
-        #g.printA()
-        pass
-    
 if __name__ == "__main__":
     main(sys.argv[1:])
