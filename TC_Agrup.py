@@ -27,24 +27,47 @@ class Gusano:
         self.cCubierto = [] #Modificar por un numpy array
         self.intraD = 0.0
 
-    def sacarConjuntoCubierto(self,r,listaInv):
+    def sacarConjuntoCubierto(self,r,listaInv,datos):
         conjuntoFinal = []
+        conjuntoFinal = np.array(conjuntoFinal)
         for i in range(0,10,2):
-            minX = math.ceil(self.pos[i] - r)
-            maxX = math.floor(self.pos[i] + r)
-            minY = math.ceil(self.pos[i+1] - r)
-            maxY = math.floor(self.pos[i+1] + r)
             conjuntoAux = []
-            for j in range(minX,maxX+1):
-                for k in range(minY,maxY+1):
-                    conjuntoAux.extend(listaInv[j][k][int((i+1)/2)])
-            if(len(conjuntoFinal) == 0):
-                conjuntoAux = conjuntoFinal
+            conjuntoAux = np.array(conjuntoAux)
+            posx = int(self.pos[i])
+            posy = int(self.pos[i+1])
+            if len(conjuntoFinal) == 0:
+                conjuntoFinal = np.array(listaInv[posx - 1][posy - 1][int((i+1)/2)])
             else:
+                conjuntoAux = np.array(listaInv[posx - 1][posy - 1][int((i+1)/2)])
                 conjuntoFinal = np.intersect1d(conjuntoFinal,conjuntoAux)
-    
-    def pruebaTiempo(self,lista):
-        print("sumadre")
+            if len(conjuntoFinal) == 0:
+                break
+
+            # minX = math.ceil(self.pos[i] - r)
+            # maxX = int(self.pos[i] + r)
+            # minY = math.ceil(self.pos[i+1] - r)
+            # maxY = int(self.pos[i+1] + r)
+            # conjuntoAux = []
+            # conjuntoAux = np.array(conjuntoAux)
+            # for j in range(minX,maxX):
+            #     for k in range(minY,maxY):
+            #         conjuntoAux = np.concatenate([conjuntoAux,listaInv[j][k][int((i+1)/2)]])
+            # conjuntoFinal = np.concatenate([conjuntoFinal,conjuntoAux])
+            # if(len(conjuntoFinal) == 0):
+            #     conjuntoAux = conjuntoFinal
+            # else:
+            #     conjuntoFinal = np.intersect1d(conjuntoFinal,conjuntoAux)
+        
+        for i in range(len(conjuntoFinal)):
+            dato = conjuntoFinal[i]
+            dist = distanciaEuc(self.pos,datos[int(conjuntoFinal[i])])
+            if dist > r :
+                np.delete(conjuntoFinal,i)        
+        self.cCubierto = conjuntoFinal
+
+
+
+
 
     def getNLuciferina(self):
         return self.nLuciferina
@@ -96,7 +119,7 @@ def randomPos(proc,size):
 #Carga los datos de un archivo de texto y los parsea para crear un arreglo numpy
 def cargarDatos():
     data = []
-    file = open("poker-hand-training-true.data", "r")
+    file = open("poker-hand-training-true.data", "r") #poker-hand-training-true.data
     lineas = 0
     for line in file:
         lineas += 1
@@ -112,7 +135,6 @@ def cargarDatos():
 #Genera las listas invertidas
 def generarListaInvertida(data): #[4][13][5]
     listaInvertida = []
-
     for i in range(4):
         d1 = []
         for j in range(13):
@@ -214,15 +236,20 @@ def main(argv):
     # print(inicio, " ", final)
     
     for i in range(inicio, final):
-        
         g = Gusano(5.0,randomPos(pid,size))
+        g.sacarConjuntoCubierto(1,listaInv,data)
         gusanos.append(g)
+        
 
     
     
 
     gusanos = comm.reduce(gusanos,op = MPI.SUM)
     
+    if pid == 0:
+        for i in gusanos:
+            if len(i.cCubierto) != 0:
+                print(i.getCCubierto())
 
     # if pid == 0:
     #     for i in gusanos:
