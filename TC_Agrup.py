@@ -17,6 +17,46 @@ import math
 #Atributos globales
 DIMENSION = 10
 
+#Se encarga de recibir el valor de los parámetros por consola
+def getValores(argv):
+
+    #Atributos que se desean pasar por consola
+    r = ""
+    g = ""
+    s = ""
+    i = ""
+    l = ""
+    k = ""
+    m = ""
+    
+    try:
+        #Se guardan en un tupla la etiqueta(opt) y el valor (arg)
+        opts, args = getopt.getopt(argv, "h:r:g:s:i:l:k:m:", ["H=","R=","G=","S=","I=","L=","K=","M="]) #Para agragar parámetros se debe modificar el parámetro "h:r:" -> "h:r:a:b:c:"... y la lista ["H=","R="] -> ["H=","R=","A=","B=","C="]
+    except getopt.GetoptError:
+        print("-r <tasa constante de decremento de luciferina\n-g <fracción constante de incremento de lciferina>\n-s <distancia constante en que se mueven los gusanos>\n-i <rango de cobertura>\n-l <valor inicial de luciferina>\n-k <cantidad de clases que debe encontrar>\n-m <tasa de gusanos por dato>")
+        sys.exit(2)
+    
+    for opt, arg in opts:
+        if opt == "-h":            #Revisa si le pasaron un -h el cual despliega el mensaje de ayuda
+            print("Imprimir el -h despliega la ayuda para ver que parámetros recibe por consola")
+            sys.exit()
+        elif opt in ("-r", "--R"): #Revisa si la etiqueta coincide y guarda el valor en el atributp correspondiente
+            r = arg
+        elif opt in ("-g", "--G"): #Revisa si la etiqueta coincide y guarda el valor en el atributp correspondiente
+            g = arg
+        elif opt in ("-s", "--S"): #Revisa si la etiqueta coincide y guarda el valor en el atributp correspondiente
+            s = arg
+        elif opt in ("-i", "--I"): #Revisa si la etiqueta coincide y guarda el valor en el atributp correspondiente
+            i = arg
+        elif opt in ("-l", "--L"): #Revisa si la etiqueta coincide y guarda el valor en el atributp correspondiente
+            l = arg
+        elif opt in ("-k", "--K"): #Revisa si la etiqueta coincide y guarda el valor en el atributp correspondiente
+            k = arg
+        elif opt in ("-m", "--M"): #Revisa si la etiqueta coincide y guarda el valor en el atributp correspondiente
+            m = arg
+    
+    return float(r), float(g), float(s), float(i), float(l), float(k), float(m) #Retorna el valor para ser usado
+
 #Clase Gusano con X atributos
 class Gusano:
     def __init__(self,L,pos):
@@ -67,7 +107,7 @@ class Gusano:
             dist = distanciaEuc(self.pos,datos[conjuntoFinal[i]])
             if dist > r :
                 np.delete(conjuntoFinal,i) 
-                       
+
         self.cCubierto = conjuntoFinal
 
     def getNLuciferina(self):
@@ -97,7 +137,10 @@ class Gusano:
     def setCCubierto(self, cCubierto):
         self.cCubierto = cCubierto
     
-    def setIntraD(self, intraD):
+    def setIntraD(self,data):
+        intraD = 0
+        for i in range(len(self.cCubierto)):
+            intraD += distanciaEuc(self.pos,data[self.cCubierto[i]])
         self.intraD = intraD
     
 def distanciaEuc(pos1,pos2):
@@ -166,52 +209,18 @@ def verListaInvertida(lInv):
                 #print("[",i+1,"]","[",j+1,"]","[",k+1,"] = ", str(lInv[i][j][k]))
     print(contador)
     
-
-
 def fitness(gusanos):  
     pass
 
-
-#Se encarga de recibir el valor de los parámetros por consola
-def getValores(argv):
-
-    #Atributos que se desean pasar por consola
-    r = ""
-    g = ""
-    s = ""
-    i = ""
-    l = ""
-    k = ""
-    m = ""
+def distIntra(gus):
+    m_dist = []
+    for i in range(len(gus)):
+        d1 = []
+        for j in range(len(gus)):
+            d1.append(distanciaEuc(gus[i].getPos(),gus[j].getPos()))
+        m_dist.append(d1)
     
-    try:
-        #Se guardan en un tupla la etiqueta(opt) y el valor (arg)
-        opts, args = getopt.getopt(argv, "h:r:g:s:i:l:k:m:", ["H=","R=","G=","S=","I=","L=","K=","M="]) #Para agragar parámetros se debe modificar el parámetro "h:r:" -> "h:r:a:b:c:"... y la lista ["H=","R="] -> ["H=","R=","A=","B=","C="]
-    except getopt.GetoptError:
-        print("-r <tasa constante de decremento de luciferina\n-g <fracción constante de incremento de lciferina>\n-s <distancia constante en que se mueven los gusanos>\n-i <rango de cobertura>\n-l <valor inicial de luciferina>\n-k <cantidad de clases que debe encontrar>\n-m <tasa de gusanos por dato>")
-        sys.exit(2)
-    
-    for opt, arg in opts:
-        if opt == "-h":            #Revisa si le pasaron un -h el cual despliega el mensaje de ayuda
-            print("Imprimir el -h despliega la ayuda para ver que parámetros recibe por consola")
-            sys.exit()
-        elif opt in ("-r", "--R"): #Revisa si la etiqueta coincide y guarda el valor en el atributp correspondiente
-            r = arg
-        elif opt in ("-g", "--G"): #Revisa si la etiqueta coincide y guarda el valor en el atributp correspondiente
-            g = arg
-        elif opt in ("-s", "--S"): #Revisa si la etiqueta coincide y guarda el valor en el atributp correspondiente
-            s = arg
-        elif opt in ("-i", "--I"): #Revisa si la etiqueta coincide y guarda el valor en el atributp correspondiente
-            i = arg
-        elif opt in ("-l", "--L"): #Revisa si la etiqueta coincide y guarda el valor en el atributp correspondiente
-            l = arg
-        elif opt in ("-k", "--K"): #Revisa si la etiqueta coincide y guarda el valor en el atributp correspondiente
-            k = arg
-        elif opt in ("-m", "--M"): #Revisa si la etiqueta coincide y guarda el valor en el atributp correspondiente
-            m = arg
-    
-    return float(r), float(g), float(s), float(i), float(l), float(k), float(m) #Retorna el valor para ser usado
-
+    print(m_dist)
 #Función principal
 def main(argv):
     comm = MPI.COMM_WORLD #Comunicador
@@ -229,11 +238,15 @@ def main(argv):
     gusanos = []
     listaInv = []
 
+    comm.barrier()
+    t_start = MPI.Wtime()
+
     if pid == 0:
         #R, G, S, I, L, K, M = getValores(argv) #Guardar un valor dado por consola
         data, cant_datos = cargarDatos()
         cant_gusanos = int(cant_datos * 0.9)
         listaInv = generarListaInvertida(data)
+        
     
     data,cant_gusanos,listaInv = comm.bcast((data,cant_gusanos,listaInv), root = 0)
     
@@ -245,7 +258,12 @@ def main(argv):
     for i in range(inicio, final):
         g = Gusano(5.0,randomPos(pid,size))
         g.sacarConjuntoCubierto(1,listaInv,data)
+        g.setIntraD(data)
         gusanos.append(g)
+
+        # if len(g.getCCubierto()) != 0:
+        #     gusanos.append(g)
+        
         
 
     
@@ -254,12 +272,20 @@ def main(argv):
     gusanos = comm.reduce(gusanos,op = MPI.SUM)
     
     if pid == 0:
+        gusanos.sort(key = lambda x: len(x.cCubierto), reverse = True)
+    
+    t_final = MPI.Wtime()
+    tw = comm.reduce(t_final-t_start, op = MPI.MAX)
+
+    if pid == 0:
+        print(gusanos[0].getIntraD())
         cont = 0
         for i in gusanos:
-            if len(i.cCubierto) >= 2:
-                print(str(i.getPos()), " = " ,str(i.getCCubierto()))
+            if len(i.cCubierto) > 0:
+                #print("Pos = ",str(i.getPos()), "\tIndice = " ,str(i.getCCubierto()), "\tIntraD =", i.getIntraD())
                 cont += 1
         print(cont)
+        print(tw)
 
     # if pid == 0:
     #     for i in gusanos:
