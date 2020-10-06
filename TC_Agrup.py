@@ -4,7 +4,7 @@ Proyecto I Programación Paralela y Concurrente | CI-0117 | II-Semestre 2020
 Profesor: Alan Calderón Castro
 Estudiantes: Carlos Espinoza Peraza B92786 y Sebastián Montero Castro B95016
 
-Descripción del proyecto:
+Descripción del proyecto: 
     
 """
 
@@ -17,7 +17,6 @@ import math
 #Atributos globales
 DIMENSION = 10
 
-
 #Clase Gusano con X atributos
 class Gusano:
     def __init__(self,L,pos):
@@ -29,45 +28,45 @@ class Gusano:
 
     def sacarConjuntoCubierto(self,r,listaInv,datos):
         conjuntoFinal = []
-        conjuntoFinal = np.array(conjuntoFinal)
+        conjuntoFinal = np.array(conjuntoFinal, dtype = int)
         for i in range(0,10,2):
             conjuntoAux = []
-            conjuntoAux = np.array(conjuntoAux)
-            posx = int(self.pos[i])
-            posy = int(self.pos[i+1])
-            if len(conjuntoFinal) == 0:
-                conjuntoFinal = np.array(listaInv[posx - 1][posy - 1][int((i+1)/2)])
+            conjuntoAux = np.array(conjuntoAux, dtype = int)
+            # posx = int(self.pos[i] - r)
+            # posy = int(self.pos[i+1] + r)
+            # if len(conjuntoFinal) == 0:
+            #     conjuntoFinal = np.array(listaInv[posx - 1][posy - 1][int((i+1)/2)], dtype = int)
+            # else:
+            #     conjuntoAux = np.array(listaInv[posx - 1][posy - 1][int((i+1)/2)],dtype = int)
+            #     conjuntoFinal = np.intersect1d(conjuntoFinal,conjuntoAux)
+            # if len(conjuntoFinal) == 0:
+            #     break
+
+            minX = math.ceil(self.pos[i] - r)
+            maxX = int(self.pos[i] + r)
+            minY = math.ceil(self.pos[i+1] - r)
+            maxY = int(self.pos[i+1] + r)
+            conjuntoAux = []
+            conjuntoAux = np.array(conjuntoAux, dtype = int)
+            for j in range(minX,maxX):
+                for k in range(minY,maxY):
+                    conjuntoAux = np.concatenate([conjuntoAux,listaInv[j][k][int((i+1)/2)]])
+            le = len(conjuntoFinal)
+            if(len(conjuntoFinal) == 0):
+                conjuntoFinal = conjuntoAux
             else:
-                conjuntoAux = np.array(listaInv[posx - 1][posy - 1][int((i+1)/2)])
                 conjuntoFinal = np.intersect1d(conjuntoFinal,conjuntoAux)
+
+
             if len(conjuntoFinal) == 0:
                 break
-
-            # minX = math.ceil(self.pos[i] - r)
-            # maxX = int(self.pos[i] + r)
-            # minY = math.ceil(self.pos[i+1] - r)
-            # maxY = int(self.pos[i+1] + r)
-            # conjuntoAux = []
-            # conjuntoAux = np.array(conjuntoAux)
-            # for j in range(minX,maxX):
-            #     for k in range(minY,maxY):
-            #         conjuntoAux = np.concatenate([conjuntoAux,listaInv[j][k][int((i+1)/2)]])
-            # conjuntoFinal = np.concatenate([conjuntoFinal,conjuntoAux])
-            # if(len(conjuntoFinal) == 0):
-            #     conjuntoAux = conjuntoFinal
-            # else:
-            #     conjuntoFinal = np.intersect1d(conjuntoFinal,conjuntoAux)
         
         for i in range(len(conjuntoFinal)):
             dato = conjuntoFinal[i]
-            dist = distanciaEuc(self.pos,datos[int(conjuntoFinal[i])])
+            dist = distanciaEuc(self.pos,datos[conjuntoFinal[i]])
             if dist > r :
                 np.delete(conjuntoFinal,i)        
         self.cCubierto = conjuntoFinal
-
-
-
-
 
     def getNLuciferina(self):
         return self.nLuciferina
@@ -143,6 +142,7 @@ def generarListaInvertida(data): #[4][13][5]
                 d2.append(0)
             d1.append(d2)
         listaInvertida.append(d1)
+    
     for i in range(4):
         for j in range(13):
             for k in range(0,10,2):
@@ -152,12 +152,31 @@ def generarListaInvertida(data): #[4][13][5]
                         listaIndices.append(l)
                 listaInvertida[i][j][int((k + 1) / 2)] = listaIndices
     #verListaInvertida(listaInvertida)
+    
+    # listaInvertida2d = []
+    # for i in range(4):
+    #     d1 = []
+    #     for j in range(13):
+    #         d1.append(0)
+    #     listaInvertida2d.append(d1)
+
+    # for i in range(4):
+    #     for j in range(13):
+    #         listaIndices = []
+    #         for k in range(0,10,2):
+    #             for l in range(len(data)):
+    #                 if data[l][k] == i + 1 and data[l][k+1] == j + 1:
+    #                     listaIndices.append(l)
+    #         listaInvertida2d[i][j] = listaIndices
+    
+
+    
     return listaInvertida
 
 def verListaInvertida(lInv):
     for i in range(0,4):
         for j in range(0,13):
-            for k in range(0,4):
+            for k in range(0,5):
                 print("[",i+1,"]","[",j+1,"]","[",k+1,"] = ", str(lInv[i][j][k]))
 
 
@@ -249,7 +268,7 @@ def main(argv):
     if pid == 0:
         for i in gusanos:
             if len(i.cCubierto) != 0:
-                print(i.getCCubierto())
+                print(str(i.getPos()), " = " ,str(i.getCCubierto()))
 
     # if pid == 0:
     #     for i in gusanos:
