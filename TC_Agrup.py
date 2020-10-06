@@ -42,16 +42,24 @@ class Gusano:
             # if len(conjuntoFinal) == 0:
             #     break
 
-            minX = math.ceil(self.pos[i] - r)
-            maxX = int(self.pos[i] + r)
-            minY = math.ceil(self.pos[i+1] - r)
-            maxY = int(self.pos[i+1] + r)
+            minX = math.ceil(self.pos[i]) - r
+            maxX = int(self.pos[i]) + r
+            minY = math.ceil(self.pos[i+1]) - r
+            maxY = int(self.pos[i+1]) + r
+            if(minX < 1):
+                minX = 1
+            if(maxX > 4):
+                maxX = 4
+            if(minY < 1):
+                minY = 1
+            if(minY > 13):
+                minY = 13
+            
             conjuntoAux = []
             conjuntoAux = np.array(conjuntoAux, dtype = int)
             for j in range(minX,maxX):
                 for k in range(minY,maxY):
                     conjuntoAux = np.concatenate([conjuntoAux,listaInv[j][k][int((i+1)/2)]])
-            le = len(conjuntoFinal)
             if(len(conjuntoFinal) == 0):
                 conjuntoFinal = conjuntoAux
             else:
@@ -132,7 +140,6 @@ def cargarDatos():
     return data, lineas
 
 #Genera las listas invertidas
-"""
 def generarListaInvertida(data): #[4][13][5]
     listaInvertida = []
     for i in range(4):
@@ -152,7 +159,7 @@ def generarListaInvertida(data): #[4][13][5]
                     if data[l][k] == i+1 and data[l][k+1] == j+1 :
                         listaIndices.append(l)
                 listaInvertida[i][j][int((k + 1) / 2)] = listaIndices
-    #verListaInvertida(listaInvertida)
+    verListaInvertida(listaInvertida)
     
     # listaInvertida2d = []
     # for i in range(4):
@@ -173,13 +180,16 @@ def generarListaInvertida(data): #[4][13][5]
 
     
     return listaInvertida
-"""
 
 def verListaInvertida(lInv):
-    for i in range(0,4):
-        for j in range(0,13):
-            for k in range(0,5):
-                print("[",i+1,"]","[",j+1,"]","[",k+1,"] = ", str(lInv[i][j][k]))
+    contador = 0
+    for i in range(len(lInv)):
+        for j in range(len(lInv[i])):
+            for k in range(len(lInv[i][j])):
+                contador = contador + len(lInv[i][j][k])
+                #print("[",i+1,"]","[",j+1,"]","[",k+1,"] = ", str(lInv[i][j][k]))
+    print(contador)
+    
 
 
 def fitness(gusanos):  
