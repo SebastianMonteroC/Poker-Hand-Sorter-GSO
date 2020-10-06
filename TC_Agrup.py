@@ -32,34 +32,27 @@ class Gusano:
         for i in range(0,10,2):
             conjuntoAux = []
             conjuntoAux = np.array(conjuntoAux, dtype = int)
-            # posx = int(self.pos[i] - r)
-            # posy = int(self.pos[i+1] + r)
-            # if len(conjuntoFinal) == 0:
-            #     conjuntoFinal = np.array(listaInv[posx - 1][posy - 1][int((i+1)/2)], dtype = int)
-            # else:
-            #     conjuntoAux = np.array(listaInv[posx - 1][posy - 1][int((i+1)/2)],dtype = int)
-            #     conjuntoFinal = np.intersect1d(conjuntoFinal,conjuntoAux)
-            # if len(conjuntoFinal) == 0:
-            #     break
 
             minX = math.ceil(self.pos[i]) - r
             maxX = int(self.pos[i]) + r
             minY = math.ceil(self.pos[i+1]) - r
             maxY = int(self.pos[i+1]) + r
+
             if(minX < 1):
                 minX = 1
             if(maxX > 4):
                 maxX = 4
             if(minY < 1):
                 minY = 1
-            if(minY > 13):
-                minY = 13
+            if(maxY > 13):
+                maxY = 13
             
             conjuntoAux = []
             conjuntoAux = np.array(conjuntoAux, dtype = int)
-            for j in range(minX,maxX):
-                for k in range(minY,maxY):
-                    conjuntoAux = np.concatenate([conjuntoAux,listaInv[j][k][int((i+1)/2)]])
+
+            for j in range(minX,maxX + 1):
+                for k in range(minY,maxY + 1):
+                    conjuntoAux = np.concatenate([conjuntoAux,listaInv[j-1][k-1][int((i+1)/2)]])
             if(len(conjuntoFinal) == 0):
                 conjuntoFinal = conjuntoAux
             else:
@@ -73,7 +66,8 @@ class Gusano:
             dato = conjuntoFinal[i]
             dist = distanciaEuc(self.pos,datos[conjuntoFinal[i]])
             if dist > r :
-                np.delete(conjuntoFinal,i)        
+                np.delete(conjuntoFinal,i) 
+                       
         self.cCubierto = conjuntoFinal
 
     def getNLuciferina(self):
@@ -160,24 +154,6 @@ def generarListaInvertida(data): #[4][13][5]
                         listaIndices.append(l)
                 listaInvertida[i][j][int((k + 1) / 2)] = listaIndices
     verListaInvertida(listaInvertida)
-    
-    # listaInvertida2d = []
-    # for i in range(4):
-    #     d1 = []
-    #     for j in range(13):
-    #         d1.append(0)
-    #     listaInvertida2d.append(d1)
-
-    # for i in range(4):
-    #     for j in range(13):
-    #         listaIndices = []
-    #         for k in range(0,10,2):
-    #             for l in range(len(data)):
-    #                 if data[l][k] == i + 1 and data[l][k+1] == j + 1:
-    #                     listaIndices.append(l)
-    #         listaInvertida2d[i][j] = listaIndices
-    
-
     
     return listaInvertida
 
@@ -278,9 +254,12 @@ def main(argv):
     gusanos = comm.reduce(gusanos,op = MPI.SUM)
     
     if pid == 0:
+        cont = 0
         for i in gusanos:
-            if len(i.cCubierto) != 0:
+            if len(i.cCubierto) >= 2:
                 print(str(i.getPos()), " = " ,str(i.getCCubierto()))
+                cont += 1
+        print(cont)
 
     # if pid == 0:
     #     for i in gusanos:
