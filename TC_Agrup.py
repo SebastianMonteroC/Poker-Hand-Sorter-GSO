@@ -133,6 +133,7 @@ def cargarDatos():
     return data, lineas
 
 #Genera las listas invertidas
+"""
 def generarListaInvertida(data): #[4][13][5]
     listaInvertida = []
     for i in range(4):
@@ -153,6 +154,7 @@ def generarListaInvertida(data): #[4][13][5]
                 listaInvertida[i][j][int((k + 1) / 2)] = listaIndices
     #verListaInvertida(listaInvertida)
     return listaInvertida
+"""
 
 def verListaInvertida(lInv):
     for i in range(0,4):
