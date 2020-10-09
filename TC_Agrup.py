@@ -73,10 +73,10 @@ class Gusano:
             conjuntoAux = []
             conjuntoAux = np.array(conjuntoAux, dtype = int)
 
-            minX = math.ceil(self.pos[i]) - r
-            maxX = int(self.pos[i]) + r
-            minY = math.ceil(self.pos[i+1]) - r
-            maxY = int(self.pos[i+1]) + r
+            minX = math.ceil(self.pos[i] - r)
+            maxX = int(self.pos[i] + r)
+            minY = math.ceil(self.pos[i+1] - r)
+            maxY = int(self.pos[i+1] + r)
 
             if(minX < 1):
                 minX = 1
@@ -98,17 +98,16 @@ class Gusano:
             else:
                 conjuntoFinal = np.intersect1d(conjuntoFinal,conjuntoAux)
 
-
             if len(conjuntoFinal) == 0:
                 break
         
         for i in range(len(conjuntoFinal)):
-            dato = conjuntoFinal[i]
             dist = distanciaEuc(self.pos,datos[conjuntoFinal[i]])
             if dist > r :
                 np.delete(conjuntoFinal,i) 
 
         self.cCubierto = conjuntoFinal
+    
 
     def getNLuciferina(self):
         return self.nLuciferina
@@ -164,7 +163,7 @@ def randomPos(proc,size):
 def cargarDatos():
     data = []
     file = open("poker-hand-training-true.data", "r") #poker-hand-training-true.data
-    lineas = 0
+    lineas = 0 
     for line in file:
         lineas += 1
         cLine = line.split(",")
@@ -257,7 +256,7 @@ def main(argv):
     
     for i in range(inicio, final):
         g = Gusano(5.0,randomPos(pid,size))
-        g.sacarConjuntoCubierto(1,listaInv,data)
+        g.sacarConjuntoCubierto(1.5,listaInv,data)
         g.setIntraD(data)
         gusanos.append(g)
 
@@ -278,10 +277,10 @@ def main(argv):
     tw = comm.reduce(t_final-t_start, op = MPI.MAX)
 
     if pid == 0:
-        print(gusanos[0].getIntraD())
+        #print(gusanos[0].getIntraD())
         cont = 0
         for i in gusanos:
-            if len(i.cCubierto) > 0:
+            if len(i.cCubierto) == 0:
                 #print("Pos = ",str(i.getPos()), "\tIndice = " ,str(i.getCCubierto()), "\tIntraD =", i.getIntraD())
                 cont += 1
         print(cont)
