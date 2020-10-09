@@ -58,25 +58,27 @@ def getValores(argv):
     return float(r), float(g), float(s), float(i), float(l), float(k), float(m) #Retorna el valor para ser usado
 
 #Clase Gusano con X atributos
-class Gusano:
-    def __init__(self,L,pos):
+class Gusano: 
+    def __init__(self,L,pos,r_s):
         self.nLuciferina = L
         self.pos = pos
         self.vAdaptacion = 0.0
         self.cCubierto = [] #Modificar por un numpy array
+        self.vecindario = []
         self.intraD = 0.0
+        self.r_s = r_s
 
-    def sacarConjuntoCubierto(self,r,listaInv,datos):
+    def sacarConjuntoCubierto(self,listaInv,datos):
         conjuntoFinal = []
         conjuntoFinal = np.array(conjuntoFinal, dtype = int)
         for i in range(0,10,2):
             conjuntoAux = []
             conjuntoAux = np.array(conjuntoAux, dtype = int)
 
-            minX = math.ceil(self.pos[i] - r)
-            maxX = int(self.pos[i] + r)
-            minY = math.ceil(self.pos[i+1] - r)
-            maxY = int(self.pos[i+1] + r)
+            minX = math.ceil(self.pos[i] - self.r_s)
+            maxX = int(self.pos[i] + self.r_s)
+            minY = math.ceil(self.pos[i+1] - self.r_s)
+            maxY = int(self.pos[i+1] + self.r_s)
 
             if(minX < 1):
                 minX = 1
@@ -103,11 +105,17 @@ class Gusano:
         
         for i in range(len(conjuntoFinal)):
             dist = distanciaEuc(self.pos,datos[conjuntoFinal[i]])
-            if dist > r :
+            if dist > self.r_s :
                 np.delete(conjuntoFinal,i) 
 
         self.cCubierto = conjuntoFinal
     
+    def sacarVecindario(self, gusanos):
+        vecindario = []
+        for g in gusanos:
+            if( (distanciaEuc(self.pos,g.getPos()) < self.r_s) and (self.nLuciferina < g.getNLuciferina()) ):
+                vecindario.append(g)
+        self.vecindario = vecindario
 
     def getNLuciferina(self):
         return self.nLuciferina
@@ -124,6 +132,9 @@ class Gusano:
     def getIntraD(self):
         return self.intraD
     
+    def getR_s(self):
+        return self.r_s
+
     def setNLuciferina(self,L):
         self.nLuciferina = L
     
@@ -141,12 +152,33 @@ class Gusano:
         for i in range(len(self.cCubierto)):
             intraD += distanciaEuc(self.pos,data[self.cCubierto[i]])
         self.intraD = intraD
+    def toString(self):
+        return "Posiciones = " + str(self.pos) + " | C_r = " + str(self.cCubierto) + " | r_s = " + str(self.r_s) + " | Luciferina = " + str(self.nLuciferina) + " | intraD = " + str(self.intraD)
     
 def distanciaEuc(pos1,pos2):
     distancia = 0.0
     for i in range(DIMENSION):
         distancia += math.sqrt(pow((pos1[i] - pos2[i]),2))
     return distancia
+
+def sacarCentroidesCandidatos(diccionario):
+    centroidesCandidatos = []
+    contador = 1
+    while(len(centroidesCandidatos) < 10):
+        try:
+            centroidesCandidatos.extend(diccionario[len(diccionario)-contador])
+            contador = contador + 1
+            for i in centroidesCandidatos:
+                for j in centroidesCandidatos:
+                    if(i != j):
+                        print(distanciaEuc(i.getPos(),j.getPos()))
+                        if(distanciaEuc(i.getPos(),j.getPos()) <= i.getR_s()):
+                            centroidesCandidatos.remove(j)
+                            print("Se elimino gusano pues " + str(distanciaEuc(i.getPos(),j.getPos())) + "es menor a 1.5")
+        except:
+            contador = contador + 1
+            
+    return centroidesCandidatos
 
 def randomPos(proc,size):
         rPos = []
@@ -206,7 +238,7 @@ def verListaInvertida(lInv):
             for k in range(len(lInv[i][j])):
                 contador = contador + len(lInv[i][j][k])
                 #print("[",i+1,"]","[",j+1,"]","[",k+1,"] = ", str(lInv[i][j][k]))
-    print(contador)
+    #print(contador)
     
 def fitness(gusanos):  
     pass
@@ -219,7 +251,16 @@ def distIntra(gus):
             d1.append(distanciaEuc(gus[i].getPos(),gus[j].getPos()))
         m_dist.append(d1)
     
-    print(m_dist)
+    #print(m_dist)
+
+def combinarDiccionarios(dic1,dic2,dataType):
+    for i in dic2:
+        if(i in dic1):
+            dic1[i].extend(dic2[i])
+        else:
+            dic1[i] = dic2[i]
+    return dic1
+
 #Función principal
 def main(argv):
     comm = MPI.COMM_WORLD #Comunicador
@@ -254,25 +295,29 @@ def main(argv):
     final = int(cant_gusanos / size + inicio)
     # print(inicio, " ", final)
     
-    for i in range(inicio, final):
-        g = Gusano(5.0,randomPos(pid,size))
-        g.sacarConjuntoCubierto(1.5,listaInv,data)
+    diccionarioC_r = {}
+    for i in range(inicio, final): 
+        g = Gusano(5.0,randomPos(pid,size),2.25)
+        g.sacarConjuntoCubierto(listaInv,data)
         g.setIntraD(data)
         gusanos.append(g)
 
-        # if len(g.getCCubierto()) != 0:
-        #     gusanos.append(g)
+        if(len(g.getCCubierto()) in diccionarioC_r):
+            diccionarioC_r[len(g.getCCubierto())].append(g)
+        else:
+            diccionarioC_r[len(g.getCCubierto())] = [g]
         
         
-
-    
-    
+    diccionarioSUM = MPI.Op.Create(combinarDiccionarios,commute = True)
+    diccionarioFinalC_r = comm.allreduce(diccionarioC_r, op = diccionarioSUM)
 
     gusanos = comm.reduce(gusanos,op = MPI.SUM)
     
     if pid == 0:
         gusanos.sort(key = lambda x: len(x.cCubierto), reverse = True)
-    
+        print(diccionarioFinalC_r.keys())
+        sacarCentroidesCandidatos(diccionarioFinalC_r)
+        
     t_final = MPI.Wtime()
     tw = comm.reduce(t_final-t_start, op = MPI.MAX)
 
