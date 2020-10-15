@@ -161,6 +161,7 @@ def distanciaEuc(pos1,pos2):
         distancia += math.sqrt(pow((pos1[i] - pos2[i]),2))
     return distancia
 
+"""
 def sacarCentroidesCandidatos(diccionario):
     centroidesCandidatos = []
     contador = 1
@@ -178,6 +179,10 @@ def sacarCentroidesCandidatos(diccionario):
         except:
             contador = contador + 1
             
+    return centroidesCandidatos
+"""
+def sacarCentroidesCandidatos(diccionario):
+    centroidesCandidatos = diccionario[max(diccionario.keys())]
     return centroidesCandidatos
 
 def randomPos(proc,size):
