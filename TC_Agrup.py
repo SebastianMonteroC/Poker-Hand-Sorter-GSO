@@ -258,6 +258,13 @@ def distIntra(gus):
     
     #print(m_dist)
 
+def interDist(cc):
+    interDist = 0
+    for i in range(len(cc)):
+        for j in range(len(cc)):
+            interDist += distanciaEuc(cc[i].getPos(), cc[j].getPos())
+    return interDist
+
 def combinarDiccionarios(dic1,dic2,dataType):
     for i in dic2:
         if(i in dic1):
