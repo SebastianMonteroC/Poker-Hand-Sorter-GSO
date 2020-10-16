@@ -16,6 +16,8 @@ import math
 
 #Atributos globales
 DIMENSION = 10
+DECREMENTOLUCIFERINA = 0.4
+INCREMENTOLUCIFERINA = 0.6
 
 #Se encarga de recibir el valor de los parámetros por consola
 def getValores(argv):
@@ -62,11 +64,15 @@ class Gusano:
     def __init__(self,L,pos,r_s):
         self.nLuciferina = L
         self.pos = pos
+        self.posAnterior = pos
         self.vAdaptacion = 0.0
         self.cCubierto = [] #Modificar por un numpy array
         self.vecindario = []
         self.intraD = 0.0
         self.r_s = r_s
+        self.F = 0.0
+        self.mejorVecino = 0 #indice del mejor vecino en el arreglo vecindario
+
 
     def sacarConjuntoCubierto(self,listaInv,datos):
         conjuntoFinal = []
@@ -117,6 +123,14 @@ class Gusano:
                 vecindario.append(g)
         self.vecindario = vecindario
 
+    def actualizarLuciferina(self):
+        luciferina = ((1-DECREMENTOLUCIFERINA) * self.nLuciferina) + (INCREMENTOLUCIFERINA * (self.F))
+        self.setNLuciferina(luciferina)
+
+    def moverGusano(self):
+        #for i in range(0,10,2):
+        return 0
+
     def getNLuciferina(self):
         return self.nLuciferina
 
@@ -134,6 +148,23 @@ class Gusano:
     
     def getR_s(self):
         return self.r_s
+
+    def getFitness(self):
+        return self.F
+
+    def setMejorVecino(self):
+        mejorVecinoEncontrado =  -float('inf')
+        sumatoriaLuc = 0.0
+        for g in range(0,len(self.vecindario)):
+            for k in range(0,len(self.vecindario)):
+                sumatoriaLuc = sumatoriaLuc + (self.vecindario[k].getNLuciferina - self.nLuciferina)
+            probJ = (self.vecindario[g].getNLuciferina() - self.nLuciferina) / sumatoriaLuc
+            if(probJ > mejorVecinoEncontrado):
+                self.mejorVecino = g
+        return self.vecindario[g]
+
+    def setFitness(self,n,SSE,maxIntraD):
+        self.F = ((1/n) * len(self.cCubierto)) / (SSE * (self.intraD/maxIntraD))
 
     def setNLuciferina(self,L):
         self.nLuciferina = L
@@ -265,7 +296,7 @@ def getSSE(centroidesCandidatos,gusanos):
             SSE = SSE + distanciaEuc(centroidesCandidatos[i],gusanos[j])
     return SSE
 
-def interDist(cc):
+def getInterDist(cc):
     interDist = 0
     for i in range(len(cc)):
         for j in range(len(cc)):
@@ -315,16 +346,20 @@ def main(argv):
     # print(inicio, " ", final)
     
     diccionarioC_r = {}
+    maxIntraD = 0.0
     for i in range(inicio, final): 
         g = Gusano(5.0,randomPos(pid,size),2.25)
         g.sacarConjuntoCubierto(listaInv,data)
         g.setIntraD(data)
-        gusanos.append(g)
-
-        if(len(g.getCCubierto()) in diccionarioC_r):
-            diccionarioC_r[len(g.getCCubierto())].append(g)
-        else:
-            diccionarioC_r[len(g.getCCubierto())] = [g]
+        if(g.getIntraD() > maxIntraD):
+            maxIntraD = g.getIntraD
+        if(len(g.getCCubierto()) > 0):
+            gusanos.append(g)
+            if(len(g.getCCubierto()) in diccionarioC_r):
+                diccionarioC_r[len(g.getCCubierto())].append(g)
+            else:
+                diccionarioC_r[len(g.getCCubierto())] = [g]
+        
         
         
     diccionarioSUM = MPI.Op.Create(combinarDiccionarios,commute = True)
@@ -332,11 +367,48 @@ def main(argv):
 
     gusanos = comm.reduce(gusanos,op = MPI.SUM)
     
+    centroidesCandidatos = []
+    SSE = 0.0
+    interDist = 0
+
     if pid == 0:
         gusanos.sort(key = lambda x: len(x.cCubierto), reverse = True)
         print(diccionarioFinalC_r.keys())
-        sacarCentroidesCandidatos(diccionarioFinalC_r)
+        centroidesCandidatos = sacarCentroidesCandidatos(diccionarioFinalC_r)
+        SSE = getSSE(centroidesCandidatos,gusanos)
+        interDist = getInterDist(centroidesCandidatos)
+
         
+    centroidesCandidatos, SSE, interDist, maxIntraD = comm.bcast((centroidesCandidatos,SSE,interDist,maxIntraD),0)
+    
+    """
+    #while(condiciones): #PARALELIZAR ESTE CICLO TAL QUE ABARQUE SOLO UNA CANTIDAD ESPECIFICA DE GUSANOS
+    for i in range(0,10):
+        newDiccionarioC_r = {}
+        newGusanos = []
+        for i in gusanos:
+            i.setFitness(len(data),SSE,maxIntraD)
+            i.actualizarLuciferina()
+            i.sacarVecindario(gusanos) #EXTREMADAMENTE INEFICIENTE, TERMINA TENIENDO UNA COMPLEJIDAD DE TIEMPO n^2 (POSIBLES OPTIMIZACIONES)
+            i.setMejorVecino()
+            i.moverGusano()
+            i.sacarConjuntoCubierto(listaInv,data)
+            i.setIndraD(data)
+            if(len(i.getCCubierto) > 0):
+                if(len(i.getCCubierto()) in newDiccionarioC_r):
+                    newDiccionarioC_r[len(i.getCCubierto())].append(i)
+                else:
+                    newDiccionarioC_r[len(i.getCCubierto())] = [i]
+                newGusanos.append(i)
+            gusanos = newGusanos
+            diccionarioFinal = newDiccionarioC_r
+            centroidesCandidatos = SE SACAN LOS CC CON LOS GUSANOS CON F MAS GRANDE
+            getSSE(centroidesCandidatos,gusanos)
+            getInterDist(centroidesCandidatos)
+
+            #FIN DEL CICLO - ESTE LOOP SE DEBE PARALELIZAR DE TAL MANERA QUE SOLO ITERE CIERTA CANTIDAD DE VECES Y ABARQUE CIERTA CANTIDAD
+            #DE GUSANOS, AL FINAL DE CADA ITERACION SE DEBE HACER UN BCAST CON LOS DATOS Y UNIRLOS.
+    """
     t_final = MPI.Wtime()
     tw = comm.reduce(t_final-t_start, op = MPI.MAX)
 
