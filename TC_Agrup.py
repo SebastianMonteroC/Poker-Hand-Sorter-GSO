@@ -258,6 +258,13 @@ def distIntra(gus):
     
     #print(m_dist)
 
+def getSSE(centroidesCandidatos,gusanos):
+    SSE = 0.0
+    for i in centroidesCandidatos:
+        for j in gusanos:
+            SSE = SSE + distanciaEuc(centroidesCandidatos[i],gusanos[j])
+    return SSE
+
 def interDist(cc):
     interDist = 0
     for i in range(len(cc)):
