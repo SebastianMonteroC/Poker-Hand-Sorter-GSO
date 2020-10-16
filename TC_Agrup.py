@@ -183,6 +183,7 @@ class Gusano:
         for i in range(len(self.cCubierto)):
             intraD += distanciaEuc(self.pos,data[self.cCubierto[i]])
         self.intraD = intraD
+        
     def toString(self):
         return "Posiciones = " + str(self.pos) + " | C_r = " + str(self.cCubierto) + " | r_s = " + str(self.r_s) + " | Luciferina = " + str(self.nLuciferina) + " | intraD = " + str(self.intraD)
     
@@ -293,7 +294,7 @@ def getSSE(centroidesCandidatos,gusanos):
     SSE = 0.0
     for i in centroidesCandidatos:
         for j in gusanos:
-            SSE = SSE + distanciaEuc(centroidesCandidatos[i],gusanos[j])
+            SSE = SSE + distanciaEuc(i.getPos(),j.getPos())
     return SSE
 
 def getInterDist(cc):
@@ -352,7 +353,7 @@ def main(argv):
         g.sacarConjuntoCubierto(listaInv,data)
         g.setIntraD(data)
         if(g.getIntraD() > maxIntraD):
-            maxIntraD = g.getIntraD
+            maxIntraD = g.getIntraD()
         if(len(g.getCCubierto()) > 0):
             gusanos.append(g)
             if(len(g.getCCubierto()) in diccionarioC_r):
