@@ -163,8 +163,8 @@ class Gusano:
                 self.mejorVecino = g
         return self.vecindario[g]
 
-    def setFitness(self,n,SSE,maxIntraD):
-        self.F = ((1/n) * len(self.cCubierto)) / (SSE * (self.intraD/maxIntraD))
+    def setFitness(self,n,valor_SSE,maxIntraD):
+        self.F = ((1/n) * len(self.cCubierto)) / (valor_SSE * (self.intraD/maxIntraD))
 
     def setNLuciferina(self,L):
         self.nLuciferina = L
@@ -245,7 +245,7 @@ def cargarDatos():
     return data, lineas
 
 #Genera las listas invertidas
-def generarListaInvertida(data): #[4][13][5]
+def generarListaInvertida(data, init, final): #[4][13][5]
     listaInvertida = []
     for i in range(4):
         d1 = []
@@ -260,7 +260,7 @@ def generarListaInvertida(data): #[4][13][5]
         for j in range(13):
             for k in range(0,10,2):
                 listaIndices = []
-                for l in range(len(data)):
+                for l in range(init, final):
                     if data[l][k] == i+1 and data[l][k+1] == j+1 :
                         listaIndices.append(l)
                 listaInvertida[i][j][int((k + 1) / 2)] = listaIndices
@@ -291,11 +291,11 @@ def distIntra(gus):
     #print(m_dist)
 
 def getSSE(centroidesCandidatos,gusanos):
-    SSE = 0.0
+    valor_SSE = 0.0
     for i in centroidesCandidatos:
         for j in gusanos:
-            SSE = SSE + distanciaEuc(i.getPos(),j.getPos())
-    return SSE
+            valor_SSE = valor_SSE + distanciaEuc(i.getPos(),j.getPos())
+    return valor_SSE
 
 def getInterDist(cc):
     interDist = 0
@@ -312,75 +312,115 @@ def combinarDiccionarios(dic1,dic2,dataType):
             dic1[i] = dic2[i]
     return dic1
 
+def combinarListasInvertidas(L1, L2, dataType):
+    for i in range(4):
+        for j in range(13):
+            for k in range(5):
+                lista1 = L1[i][j][k]
+                lista1.extend(L2[i][j][k])
+                L1[i][j][k] = lista1
+    return L1
 #Función principal
 def main(argv):
-    comm = MPI.COMM_WORLD #Comunicador
-    pid = comm.rank       #Proceso
-    size = comm.size      #Cantidad de procesos
-    R = 0                 #Tasa constante de decremento de luciferina
-    G = 0                 #Fracción constante de incremento de luciferina
-    S = 0                 #Distancia constante en la que se mueven los gusanos
-    I = 0                 #Rango de cobertura de un gusano para incluir datos asociados
-    L = 0                 #Valor inicial de luciferina en los gusanos
-    K = 0                 #Cantidad de clases a encontrar
-    M = 0                 #Tasa de gusanos por dato
-    data = []             #Conjunto de manos
-    cant_gusanos = 0
-    gusanos = []
-    listaInv = []
+    comm = MPI.COMM_WORLD       #Comunicador
+    pid = comm.rank             #Proceso
+    size = comm.size            #Cantidad de procesos
 
-    comm.barrier()
+    #Constantes proporcionadas por consola
+    R = 0                       #Tasa constante de decremento de luciferina
+    G = 0                       #Fracción constante de incremento de luciferina
+    S = 0                       #Distancia constante en la que se mueven los gusanos
+    I = 0                       #Rango de cobertura de un gusano para incluir datos asociados
+    L = 0                       #Valor inicial de luciferina en los gusanos
+    K = 0                       #Cantidad de clases a encontrar
+    M = 0                       #Tasa de gusanos por dato
+
+    #Variables 
+    data = []                   #Conjunto de manos
+    cant_gusanos = 0            #Cantidad de gusanos, 90% de la cantidad total de datos
+    gusanos = []                #Arreglo de gusanos
+    listaInv = []               #Lista invertida con los índices de los datos
+    diccionarioC_r = {}         #Key = {cantidad de elementos cubiertos} | Value {Elemenos con 'key' datos cubiertos}
+    maxIntraD = 0.0             #Valor maximo de intraD dentro del conjunto de gusanos
+    centroidesCandidatos = []   #Lista con los centroides candidatos
+    valor_SSE = 0.0                   #Valor de la SSE (Squared algo)
+    interDist = 0               #Valor de la intradistancia
+
+    #Se sincronizan los procesos
+    comm.barrier()              #Función para sincronizar
+
+    #<-----Se inicia la toma del tiempo----->
     t_start = MPI.Wtime()
 
+    """
+    Proceso 0 se encarga de recoger los datos pasados por consola, así como cargar los datos
+    Realiza el cálculo de la cantidad de Gusanos siendo del 0.9 del total de datos
+    """
     if pid == 0:
         #R, G, S, I, L, K, M = getValores(argv) #Guardar un valor dado por consola
         data, cant_datos = cargarDatos()
-        cant_gusanos = int(cant_datos * 0.9)
-        listaInv = generarListaInvertida(data)
         
-    
-    data,cant_gusanos,listaInv = comm.bcast((data,cant_gusanos,listaInv), root = 0)
-    
+    #Bcast a todos los procesos con la lista de datos
+    data = comm.bcast(data, root = 0)
 
-    inicio = int(pid * cant_gusanos / size)
-    final = int(cant_gusanos / size + inicio)
-    # print(inicio, " ", final)
     
-    diccionarioC_r = {}
-    maxIntraD = 0.0
+    #<------Rangos para la paralelización por tareas------>
+
+    #Se determinan los rangos de trabajo para crear los gusanos
+    inicio = int(pid * (len(data)*0.9) / size)
+    final = int((len(data)*0.9) / size + inicio)
+
+    #Se determinan los rangos de trabajo para crear la lista invertida
+    init_ListaInvertida = int(pid * len(data) / size)
+    final_ListaInvertida = int((pid + 1) * len(data) / size)
+
+    #<------Rangos para la paralelización por tareas------>
+
+    #Validación de las funciones reductoras especiales para las diferentes estructuras de datos
+    diccionarioSUM = MPI.Op.Create(combinarDiccionarios,commute = True)
+    listaInvertidaSUM = MPI.Op.Create(combinarListasInvertidas, commute = True)
+    
+    #Creación de la lista invertida por procesos
+    listaInv = generarListaInvertida(data,init_ListaInvertida, final_ListaInvertida)
+
+    #Se reduce la lista invertida al proceso 0
+    listaInv = comm.allreduce(listaInv, op = listaInvertidaSUM)
+
+    #Se realiza un bcast a todos los procesos con la lista invertida
+    listaInv = comm.bcast(listaInv, root = 0)
+
+    #Se crean los gusanos dependiendo de la división de trabajo entre procesos
     for i in range(inicio, final): 
         g = Gusano(5.0,randomPos(pid,size),2.25)
         g.sacarConjuntoCubierto(listaInv,data)
         g.setIntraD(data)
         if(g.getIntraD() > maxIntraD):
             maxIntraD = g.getIntraD()
-        if(len(g.getCCubierto()) > 0):
+
+        if(len(g.getCCubierto()) > 0):                              #Se descartan los gusanos que no cubren ningún dato
             gusanos.append(g)
-            if(len(g.getCCubierto()) in diccionarioC_r):
-                diccionarioC_r[len(g.getCCubierto())].append(g)
+            if(len(g.getCCubierto()) in diccionarioC_r):            #Se revisa que la cantidad de datos cubiertos esté dentro del diccionario
+                diccionarioC_r[len(g.getCCubierto())].append(g)     #Si la cantidad se encuentra se agrega al los value de ese key
             else:
-                diccionarioC_r[len(g.getCCubierto())] = [g]
+                diccionarioC_r[len(g.getCCubierto())] = [g]         #Si no se encuentra, se crea una nueva key
         
         
-        
-    diccionarioSUM = MPI.Op.Create(combinarDiccionarios,commute = True)
+    #Se reducen los diccionarios en el proceso 0 
     diccionarioFinalC_r = comm.allreduce(diccionarioC_r, op = diccionarioSUM)
-
-    gusanos = comm.reduce(gusanos,op = MPI.SUM)
     
-    centroidesCandidatos = []
-    SSE = 0.0
-    interDist = 0
+    #Se reduce la lista de gusanos al proceso 0
+    gusanos = comm.reduce(gusanos,op = MPI.SUM)
 
+    #El procesos 0 se encarga de generar la lista de los centroides cantidatos 
     if pid == 0:
         gusanos.sort(key = lambda x: len(x.cCubierto), reverse = True)
         print(diccionarioFinalC_r.keys())
         centroidesCandidatos = sacarCentroidesCandidatos(diccionarioFinalC_r)
-        SSE = getSSE(centroidesCandidatos,gusanos)
+        valor_SSE = getSSE(centroidesCandidatos,gusanos)
         interDist = getInterDist(centroidesCandidatos)
 
         
-    centroidesCandidatos, SSE, interDist, maxIntraD = comm.bcast((centroidesCandidatos,SSE,interDist,maxIntraD),0)
+    centroidesCandidatos, valor_SSE, interDist, maxIntraD = comm.bcast((centroidesCandidatos,valor_SSE,interDist,maxIntraD),0)
     
     """
     #while(condiciones): #PARALELIZAR ESTE CICLO TAL QUE ABARQUE SOLO UNA CANTIDAD ESPECIFICA DE GUSANOS
@@ -388,7 +428,7 @@ def main(argv):
         newDiccionarioC_r = {}
         newGusanos = []
         for i in gusanos:
-            i.setFitness(len(data),SSE,maxIntraD)
+            i.setFitness(len(data),valor_SSE,maxIntraD)
             i.actualizarLuciferina()
             i.sacarVecindario(gusanos) #EXTREMADAMENTE INEFICIENTE, TERMINA TENIENDO UNA COMPLEJIDAD DE TIEMPO n^2 (POSIBLES OPTIMIZACIONES)
             i.setMejorVecino()
@@ -410,7 +450,11 @@ def main(argv):
             #FIN DEL CICLO - ESTE LOOP SE DEBE PARALELIZAR DE TAL MANERA QUE SOLO ITERE CIERTA CANTIDAD DE VECES Y ABARQUE CIERTA CANTIDAD
             #DE GUSANOS, AL FINAL DE CADA ITERACION SE DEBE HACER UN BCAST CON LOS DATOS Y UNIRLOS.
     """
+
+    #<-----Se inicia la toma del tiempo----->
     t_final = MPI.Wtime()
+
+    #Se reduce la toma del tiempo al proceso 0
     tw = comm.reduce(t_final-t_start, op = MPI.MAX)
 
     if pid == 0:
