@@ -198,7 +198,7 @@ class Gusano:
         self.intraD = intraD
         
     def toString(self):
-        return "Posiciones = " + str(self.pos) + " | C_r = " + str(self.cCubierto) + " | r_s = " + str(self.r_s) + " | Luciferina = " + str(self.nLuciferina) + " | intraD = " + str(self.intraD) + "\n Vecindario: " + len(self.vecindario) 
+        return "Posiciones = " + str(self.pos) + " | C_r = " + str(self.cCubierto) + " | r_s = " + str(self.r_s) + " | Luciferina = " + str(self.nLuciferina) + " | intraD = " + str(self.intraD) + "\n Vecindario: " + str(len(self.vecindario))
     
 def distanciaEuc(pos1,pos2):
     distancia = 0.0
@@ -430,7 +430,7 @@ def main(argv):
 
     #Se crean los gusanos dependiendo de la división de trabajo entre procesos
     for i in range(inicio, final): 
-        g = Gusano(5.0,randomPos(pid,size),1)
+        g = Gusano(5.0,randomPos(pid,size),2)
         g.sacarConjuntoCubierto(listaInv,data)
         g.setIntraD(data)
         if(g.getIntraD() > maxIntraD):
@@ -463,7 +463,7 @@ def main(argv):
     
     
     #while(condiciones): #PARALELIZAR ESTE CICLO TAL QUE ABARQUE SOLO UNA CANTIDAD ESPECIFICA DE GUSANOS
-    for k in range(0,10):
+    for k in range(0,2):
         newGusanos = []
         inicio = int(pid * (len(gusanos)/size))
         final = int(len(gusanos)/size + inicio)
@@ -485,7 +485,8 @@ def main(argv):
             centroidesCandidatos = sacarCcPorFitness(gusanos)
             valor_SSE = getSSE(centroidesCandidatos,gusanos)
             interDist = getInterDist(centroidesCandidatos)
-        
+            print("Cant CC = ", len(centroidesCandidatos))
+            print("Cant Gusanos = ", len(gusanos))
         centroidesCandidatos, valor_SSE, interDist, gusanos = comm.bcast((centroidesCandidatos,valor_SSE,interDist,gusanos),0)
         
 
@@ -498,13 +499,14 @@ def main(argv):
     if pid == 0:
         #print(gusanos[0].getIntraD())
         #cont = 0
-        for i in centroidesCandidatos:
-            print(i.toString())
+        # for i in centroidesCandidatos:
+        #     print(i.toString())
         #for i in gusanos:
          #   if len(i.cCubierto) == 0:
                 #print("Pos = ",str(i.getPos()), "\tIndice = " ,str(i.getCCubierto()), "\tIntraD =", i.getIntraD())
               #  cont += 1
         #print(cont)
+        #print("Cant CC = ", len(centroidesCandidatos))
         print(tw)
 
     # if pid == 0:
