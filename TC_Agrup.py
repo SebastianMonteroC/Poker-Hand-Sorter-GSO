@@ -72,6 +72,7 @@ class Gusano:
         self.r_s = r_s
         self.F = 0.0
         self.mejorVecino = 0 #indice del mejor vecino en el arreglo vecindario
+        self.probabilidades = []
 
 
     def sacarConjuntoCubierto(self,listaInv,datos):
@@ -157,12 +158,13 @@ class Gusano:
         sumatoriaLuc = 0.0
         for g in range(0,len(self.vecindario)):
             for k in range(0,len(self.vecindario)):
-                sumatoriaLuc = sumatoriaLuc + (self.vecindario[k].getNLuciferina - self.nLuciferina)
+                sumatoriaLuc = sumatoriaLuc + (self.vecindario[k].getNLuciferina() - self.nLuciferina)
             probJ = (self.vecindario[g].getNLuciferina() - self.nLuciferina) / sumatoriaLuc
+            self.probabilidades.append(probJ)
             if(probJ > mejorVecinoEncontrado):
                 self.mejorVecino = g
         return self.vecindario[g]
-
+        
     def setFitness(self,n,valor_SSE,maxIntraD):
         self.F = ((1/n) * len(self.cCubierto)) / (valor_SSE * (self.intraD/maxIntraD))
 
@@ -427,20 +429,22 @@ def main(argv):
     for i in range(0,10):
         newDiccionarioC_r = {}
         newGusanos = []
-        for i in gusanos:
-            i.setFitness(len(data),valor_SSE,maxIntraD)
-            i.actualizarLuciferina()
-            i.sacarVecindario(gusanos) #EXTREMADAMENTE INEFICIENTE, TERMINA TENIENDO UNA COMPLEJIDAD DE TIEMPO n^2 (POSIBLES OPTIMIZACIONES)
-            i.setMejorVecino()
-            i.moverGusano()
-            i.sacarConjuntoCubierto(listaInv,data)
-            i.setIndraD(data)
-            if(len(i.getCCubierto) > 0):
-                if(len(i.getCCubierto()) in newDiccionarioC_r):
-                    newDiccionarioC_r[len(i.getCCubierto())].append(i)
+        inicio = int(pid * (len(gusanos)/size))
+        final = int(len(gusanos)/size + inicio)
+        for i in range(inicio,final):
+            gusanos[i].setFitness(len(data),valor_SSE,maxIntraD)
+            gusanos[i].actualizarLuciferina()
+            gusanos[i].sacarVecindario(gusanos) #EXTREMADAMENTE INEFICIENTE, TERMINA TENIENDO UNA COMPLEJIDAD DE TIEMPO n^2 (POSIBLES OPTIMIZACIONES)
+            gusanos[i].setMejorVecino()
+            gusanos[i].moverGusano()
+            gusanos[i].sacarConjuntoCubierto(listaInv,data)
+            gusanos[i].setIntraD(data)
+            if(len(gusanos[i].getCCubierto) > 0):
+                if(len(gusanos[i].getCCubierto()) in newDiccionarioC_r):
+                    newDiccionarioC_r[len(gusanos[i].getCCubierto())].append(gusanos[i])
                 else:
-                    newDiccionarioC_r[len(i.getCCubierto())] = [i]
-                newGusanos.append(i)
+                    newDiccionarioC_r[len(gusanos[i].getCCubierto())] = gusanos[i]
+                newGusanos.append(gusanos[i])
             gusanos = newGusanos
             diccionarioFinal = newDiccionarioC_r
             centroidesCandidatos = SE SACAN LOS CC CON LOS GUSANOS CON F MAS GRANDE
