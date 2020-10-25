@@ -198,7 +198,7 @@ class Gusano:
         self.intraD = intraD
         
     def toString(self):
-        return "Posiciones = " + str(self.pos) + " | C_r = " + str(self.cCubierto) + " | r_s = " + str(self.r_s) + " | Luciferina = " + str(self.nLuciferina) + " | intraD = " + str(self.intraD)
+        return "Posiciones = " + str(self.pos) + " | C_r = " + str(self.cCubierto) + " | r_s = " + str(self.r_s) + " | Luciferina = " + str(self.nLuciferina) + " | intraD = " + str(self.intraD) + "\n Vecindario: " + len(self.vecindario) 
     
 def distanciaEuc(pos1,pos2):
     distancia = 0.0
@@ -406,7 +406,7 @@ def main(argv):
     #<------Rangos para la paralelización por tareas------>
 
     #Se determinan los rangos de trabajo para crear los gusanos
-    inicio = int(pid * (len(data)*0.9) / size)
+    inicio = int(pid * (len(data)*0.1) / size)
     final = int((len(data)*0.1) / size + inicio)
 
     #Se determinan los rangos de trabajo para crear la lista invertida
@@ -430,7 +430,7 @@ def main(argv):
 
     #Se crean los gusanos dependiendo de la división de trabajo entre procesos
     for i in range(inicio, final): 
-        g = Gusano(5.0,randomPos(pid,size),5)
+        g = Gusano(5.0,randomPos(pid,size),1)
         g.sacarConjuntoCubierto(listaInv,data)
         g.setIntraD(data)
         if(g.getIntraD() > maxIntraD):
@@ -463,7 +463,7 @@ def main(argv):
     
     
     #while(condiciones): #PARALELIZAR ESTE CICLO TAL QUE ABARQUE SOLO UNA CANTIDAD ESPECIFICA DE GUSANOS
-    for k in range(0,1):
+    for k in range(0,10):
         newGusanos = []
         inicio = int(pid * (len(gusanos)/size))
         final = int(len(gusanos)/size + inicio)
@@ -497,12 +497,14 @@ def main(argv):
 
     if pid == 0:
         #print(gusanos[0].getIntraD())
-        cont = 0
-        for i in gusanos:
-            if len(i.cCubierto) == 0:
+        #cont = 0
+        for i in centroidesCandidatos:
+            print(i.toString())
+        #for i in gusanos:
+         #   if len(i.cCubierto) == 0:
                 #print("Pos = ",str(i.getPos()), "\tIndice = " ,str(i.getCCubierto()), "\tIntraD =", i.getIntraD())
-                cont += 1
-        print(cont)
+              #  cont += 1
+        #print(cont)
         print(tw)
 
     # if pid == 0:
