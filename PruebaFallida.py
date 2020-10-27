@@ -8,21 +8,16 @@ Descripción del proyecto:
     
 """
 
-from os import remove
-from random import gauss
 from mpi4py import MPI
 import sys, getopt
 import numpy as np
 import random
 import math
 
-from numpy.lib.function_base import delete
-
 #Atributos globales
 DIMENSION = 10
 DECREMENTOLUCIFERINA = 0.4
 INCREMENTOLUCIFERINA = 0.6
-CONSTANTEMOVIMIENTO = 0.9
 
 #Se encarga de recibir el valor de los parámetros por consola
 def getValores(argv):
@@ -77,7 +72,6 @@ class Gusano:
         self.r_s = r_s
         self.F = 0.0
         self.mejorVecino = 0 #indice del mejor vecino en el arreglo vecindario
-        self.probabilidades = []
 
 
     def sacarConjuntoCubierto(self,listaInv,datos):
@@ -125,27 +119,17 @@ class Gusano:
     def sacarVecindario(self, gusanos):
         vecindario = []
         for g in gusanos:
-            if( (distanciaEuc(self.pos,g.getPos()) < self.r_s * 3) and (self.nLuciferina < g.getNLuciferina()) ):
+            if( (distanciaEuc(self.pos,g.getPos()) < self.r_s) and (self.nLuciferina < g.getNLuciferina()) ):
                 vecindario.append(g)
         self.vecindario = vecindario
-        
-        #print("Cantidad de vecinos = ", len(vecindario))
 
     def actualizarLuciferina(self):
         luciferina = ((1-DECREMENTOLUCIFERINA) * self.nLuciferina) + (INCREMENTOLUCIFERINA * (self.F))
         self.setNLuciferina(luciferina)
 
     def moverGusano(self):
-        gusanoSeleccionado = seleccionarGusano(self.vecindario,self.probabilidades)
-        if(gusanoSeleccionado != None):
-            for i in range(0,10,2):    
-                nuevaX = self.posAnterior[i] + CONSTANTEMOVIMIENTO * ((gusanoSeleccionado.getPos()[i] - self.pos[i]) / (math.sqrt(pow((gusanoSeleccionado.getPos()[i] - self.pos[i]),2))))
-                nuevaY = self.posAnterior[i+1] + CONSTANTEMOVIMIENTO * ((gusanoSeleccionado.getPos()[i+1] - self.pos[i+1]) / (math.sqrt(pow((gusanoSeleccionado.getPos()[i+1] - self.pos[i+1]),2))))
-                self.posAnterior[i] = self.pos[i]
-                self.posAnterior[i+1] = self.pos[i+1]
-
-                self.pos[i] = nuevaX
-                self.pos[i+1] = nuevaY
+        #for i in range(0,10,2):
+        return 0
 
     def getNLuciferina(self):
         return self.nLuciferina
@@ -159,6 +143,9 @@ class Gusano:
     def getCCubierto(self):
         return self.cCubierto
     
+    def getVencindario(self):
+        return self.vecindario
+    
     def getIntraD(self):
         return self.intraD
     
@@ -168,9 +155,6 @@ class Gusano:
     def getFitness(self):
         return self.F
 
-    def getPosAnterior(self):
-        return self.posAnterior
-
     def setMejorVecino(self):
         mejorVecinoEncontrado =  -float('inf')
         sumatoriaLuc = 0.0
@@ -178,10 +162,10 @@ class Gusano:
             for k in range(0,len(self.vecindario)):
                 sumatoriaLuc = sumatoriaLuc + (self.vecindario[k].getNLuciferina() - self.nLuciferina)
             probJ = (self.vecindario[g].getNLuciferina() - self.nLuciferina) / sumatoriaLuc
-            self.probabilidades.append(probJ)
             if(probJ > mejorVecinoEncontrado):
                 self.mejorVecino = g
-        
+        return self.vecindario[self.mejorVecino]
+
     def setFitness(self,n,valor_SSE,maxIntraD):
         self.F = ((1/n) * len(self.cCubierto)) / (valor_SSE * (self.intraD/maxIntraD))
 
@@ -204,11 +188,11 @@ class Gusano:
         self.intraD = intraD
         
     def toString(self):
-        return "Posiciones = " + str(self.pos) + " | C_r = " + str(self.cCubierto) + " | r_s = " + str(self.r_s) + " | Luciferina = " + str(self.nLuciferina) + " | intraD = " + str(self.intraD) + "\n Vecindario: " + str(len(self.vecindario))
+        return "Posiciones = " + str(self.pos) + " | C_r = " + str(self.cCubierto) + " | r_s = " + str(self.r_s) + " | Luciferina = " + str(self.nLuciferina) + " | intraD = " + str(self.intraD)
     
 def distanciaEuc(pos1,pos2):
     distancia = 0.0
-    for i in range(0,DIMENSION):
+    for i in range(DIMENSION):
         distancia += math.sqrt(pow((pos1[i] - pos2[i]),2))
     return distancia
 
@@ -232,46 +216,10 @@ def sacarCentroidesCandidatos(diccionario):
             
     return centroidesCandidatos
 """
-def sacarCentroidesCandidatos(arreglo):
-    #centroidesCandidatos = diccionario[max(diccionario.keys())]
-    return arreglo[:int(len(arreglo)/2)]
-    #return centroidesCandidatos
-
-def sacarCcPorFitness(gusanos):
-    centroidesCandidatos = []
-    if(int(len(gusanos)/4) > 10):
-        gusanos.sort(key = lambda x: x.F, reverse = True)
-        centroidesCandidatos = gusanos[:int(len(gusanos)/4)]
-    else:
-        centroidesCandidatos = gusanos[:10]
+def sacarCentroidesCandidatos(diccionario):
+    centroidesCandidatos = diccionario[max(diccionario.keys())]
     return centroidesCandidatos
 
-def seleccionarGusano(vecindario,probabilidades):
-    indice = 0
-    try:
-        
-        if len(vecindario) > 0: 
-            indice = momentoRuleta(probabilidades)
-            if(len(vecindario) > indice):
-                return vecindario[indice]
-        return None
-    except:
-        print("Se cayó en el índice")
-        print("Vecindario ", len(vecindario))
-        print("Indice ", indice)
-        return None
-
-def momentoRuleta(probabilidades):
-    probabilidadesSum = 0.0
-    for i in probabilidades:
-        probabilidadesSum += i
-    valor = random.uniform(0,1) * probabilidadesSum
-    for i in range (0,len(probabilidades)-1):
-        valor -= probabilidades[i]
-        if(valor <= 0):
-            return i
-    return len(probabilidades) - 1
-    
 def randomPos(proc,size):
         rPos = []
         for i in range (1,11):
@@ -359,21 +307,6 @@ def getInterDist(cc):
             interDist += distanciaEuc(cc[i].getPos(), cc[j].getPos())
     return interDist
 
-def revisarCentroides(centroides, rs):
-    for i in centroides:
-        for j in centroides:
-            if(distanciaEuc(i.getPos(), j.getPos()) < rs and i.getNLuciferina() > j.getNLuciferina()):
-                cCubiertoI = []
-                cCubiertoI = np.ndarray(cCubiertoI, dtype = int)
-                cCubiertoJ = []
-                cCubiertoJ = np.ndarray(cCubiertoJ, dtype = int)
-                cCubiertoJ.append(j.getCCubierto())
-                cCubiertoI.append(i.getCCubierto())
-                cCubiertoI = np.concatenate(cCubiertoI,cCubiertoJ)
-                i.setCCubierto(cCubiertoI)
-                centroides.remove(j)
-    return centroides
-
 def combinarDiccionarios(dic1,dic2,dataType):
     for i in dic2:
         if(i in dic1):
@@ -390,6 +323,7 @@ def combinarListasInvertidas(L1, L2, dataType):
                 lista1.extend(L2[i][j][k])
                 L1[i][j][k] = lista1
     return L1
+
 #Función principal
 def main(argv):
     comm = MPI.COMM_WORLD       #Comunicador
@@ -405,7 +339,7 @@ def main(argv):
     K = 0                       #Cantidad de clases a encontrar
     M = 0                       #Tasa de gusanos por dato
 
-    #Variables
+    #Variables 
     data = []                   #Conjunto de manos
     cant_gusanos = 0            #Cantidad de gusanos, 90% de la cantidad total de datos
     gusanos = []                #Arreglo de gusanos
@@ -413,7 +347,7 @@ def main(argv):
     diccionarioC_r = {}         #Key = {cantidad de elementos cubiertos} | Value {Elemenos con 'key' datos cubiertos}
     maxIntraD = 0.0             #Valor maximo de intraD dentro del conjunto de gusanos
     centroidesCandidatos = []   #Lista con los centroides candidatos
-    valor_SSE = 0.0                   #Valor de la SSE (Squared algo)
+    valor_SSE = 0.0             #Valor de la SSE (Squared algo)
     interDist = 0               #Valor de la intradistancia
 
     #Se sincronizan los procesos
@@ -437,8 +371,8 @@ def main(argv):
     #<------Rangos para la paralelización por tareas------>
 
     #Se determinan los rangos de trabajo para crear los gusanos
-    inicio = int(pid * (len(data)*0.05) / size)
-    final = int((len(data)*0.05) / size + inicio)
+    inicio = int(pid * (len(data)*0.1) / size)
+    final = int((len(data)*0.1) / size + inicio)
 
     #Se determinan los rangos de trabajo para crear la lista invertida
     init_ListaInvertida = int(pid * len(data) / size)
@@ -481,49 +415,65 @@ def main(argv):
     #Se reduce la lista de gusanos al proceso 0
     gusanos = comm.reduce(gusanos,op = MPI.SUM)
 
+    gusanos = comm.bcast(gusanos, root = 0)
+    inicio = int(pid * (len(gusanos)*0.9) / size)
+    final = int((len(gusanos)*0.9) / size + inicio)
+
+    for i in range(inicio,final):
+        gusanos[i].sacarVecindario(gusanos)
+
+    gusanos = comm.reduce(gusanos, op = MPI.SUM)
+
+    
+    
+
     #El procesos 0 se encarga de generar la lista de los centroides cantidatos 
     if pid == 0:
+        for i in gusanos:
+            print("hola")
+            print("Vec: ", i.getVencindario())
         gusanos.sort(key = lambda x: len(x.cCubierto), reverse = True)
         print(diccionarioFinalC_r.keys())
-        centroidesCandidatos = gusanos[:int(len(gusanos)/2)]
+        centroidesCandidatos = sacarCentroidesCandidatos(diccionarioFinalC_r)
         valor_SSE = getSSE(centroidesCandidatos,gusanos)
         interDist = getInterDist(centroidesCandidatos)
-
-        
-    centroidesCandidatos, valor_SSE, interDist, maxIntraD, gusanos = comm.bcast((centroidesCandidatos,valor_SSE,interDist,maxIntraD,gusanos),0)
+    
+    #Se hace un bcast a todos los procesos
+    centroidesCandidatos, valor_SSE, interDist, maxIntraD = comm.bcast((centroidesCandidatos,valor_SSE,interDist,maxIntraD),0)
     
     
     #while(condiciones): #PARALELIZAR ESTE CICLO TAL QUE ABARQUE SOLO UNA CANTIDAD ESPECIFICA DE GUSANOS
-    for k in range(0,5):
+    for i in range(0,1):
+        newDiccionarioC_r = {}
         newGusanos = []
-        inicio = int(pid * (len(gusanos)/size))
-        final = int(len(gusanos)/size + inicio)
-        for i in range(inicio,final):
+        inicio = int(pid * (len(gusanos) / size))
+        final = int(len(gusanos) / size + inicio)
+
+        for i in range(inicio, final):
             gusanos[i].setFitness(len(data),valor_SSE,maxIntraD)
             gusanos[i].actualizarLuciferina()
             gusanos[i].sacarVecindario(gusanos) #EXTREMADAMENTE INEFICIENTE, TERMINA TENIENDO UNA COMPLEJIDAD DE TIEMPO n^2 (POSIBLES OPTIMIZACIONES)
             gusanos[i].setMejorVecino()
             gusanos[i].moverGusano()
             gusanos[i].sacarConjuntoCubierto(listaInv,data)
-            gusanos[i].setIntraD(data)
-            if(len(gusanos[i].getCCubierto()) > 0):
+            gusanos[i].setIndraD(data)
+            if(len(i.getCCubierto) > 0):
+                if(len(gusanos[i].getCCubierto()) in newDiccionarioC_r):
+                    newDiccionarioC_r[len(gusanos[i].getCCubierto())].append(i)
+                else:
+                    newDiccionarioC_r[len(i.getCCubierto())] = [gusanos[i]]
                 newGusanos.append(gusanos[i])
-        
-        gusanos = newGusanos
-        gusanos = comm.reduce(gusanos,op = MPI.SUM)
+            gusanos = newGusanos
+            diccionarioFinal = newDiccionarioC_r
+            #centroidesCandidatos = SE SACAN LOS CC CON LOS GUSANOS CON F MAS GRANDE
+            getSSE(centroidesCandidatos,gusanos)
+            getInterDist(centroidesCandidatos)
 
-        if(pid == 0):
-            gusanos = revisarCentroides(gusanos, 2)
-            centroidesCandidatos = sacarCcPorFitness(gusanos)
-            valor_SSE = getSSE(centroidesCandidatos,gusanos)
-            interDist = getInterDist(centroidesCandidatos)
-            centroidesCandidatos = revisarCentroides(centroidesCandidatos, 2)
-            print("Cant CC = ", len(centroidesCandidatos))
-            print("Cant Gusanos = ", len(gusanos))
-        centroidesCandidatos, valor_SSE, interDist, gusanos = comm.bcast((centroidesCandidatos,valor_SSE,interDist,gusanos),0)
-        
+            #FIN DEL CICLO - ESTE LOOP SE DEBE PARALELIZAR DE TAL MANERA QUE SOLO ITERE CIERTA CANTIDAD DE VECES Y ABARQUE CIERTA CANTIDAD
+            #DE GUSANOS, AL FINAL DE CADA ITERACION SE DEBE HACER UN BCAST CON LOS DATOS Y UNIRLOS.
+   
 
-    #<-----Se inicia la toma del tiempo----->
+    #<-----Se termina la toma del tiempo----->
     t_final = MPI.Wtime()
 
     #Se reduce la toma del tiempo al proceso 0
@@ -531,15 +481,12 @@ def main(argv):
 
     if pid == 0:
         #print(gusanos[0].getIntraD())
-        #cont = 0
-        # for i in centroidesCandidatos:
-        #     print(i.toString())
-        #for i in gusanos:
-         #   if len(i.cCubierto) == 0:
+        cont = 0
+        for i in gusanos:
+            if len(i.cCubierto) == 0:
                 #print("Pos = ",str(i.getPos()), "\tIndice = " ,str(i.getCCubierto()), "\tIntraD =", i.getIntraD())
-              #  cont += 1
-        #print(cont)
-        #print("Cant CC = ", len(centroidesCandidatos))
+                cont += 1
+        print(cont)
         print(tw)
 
     # if pid == 0:
