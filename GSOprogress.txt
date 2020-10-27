@@ -1,0 +1,25 @@
+Iteracion 0 tardó 8.62326142922393 segundos.
+Cantidad de Centroides:311
+Cantidad de gusanos: 1247
+Reduccion de 0 gusanos y 313
+ --------------------------------------------------------------------------- 
+Iteracion 1 tardó 8.146362119136029 segundos.
+Cantidad de Centroides:310
+Cantidad de gusanos: 1242
+Reduccion de 1 gusanos y 1
+ --------------------------------------------------------------------------- 
+Iteracion 2 tardó 6.975944703299319 segundos.
+Cantidad de Centroides:310
+Cantidad de gusanos: 1240
+Reduccion de 0 gusanos y 0
+ --------------------------------------------------------------------------- 
+Iteracion 3 tardó 7.908455377058999 segundos.
+Cantidad de Centroides:309
+Cantidad de gusanos: 1239
+Reduccion de 0 gusanos y 1
+ --------------------------------------------------------------------------- 
+Iteracion 4 tardó 7.187518925842596 segundos.
+Cantidad de Centroides:309
+Cantidad de gusanos: 1236
+Reduccion de 0 gusanos y 0
+ --------------------------------------------------------------------------- 

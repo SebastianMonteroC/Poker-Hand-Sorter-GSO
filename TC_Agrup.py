@@ -23,6 +23,7 @@ DIMENSION = 10
 DECREMENTOLUCIFERINA = 0.4
 INCREMENTOLUCIFERINA = 0.6
 CONSTANTEMOVIMIENTO = 0.9
+NUMERODEITERACIONES = 5
 
 #Se encarga de recibir el valor de los parámetros por consola
 def getValores(argv):
@@ -488,13 +489,17 @@ def main(argv):
         centroidesCandidatos = gusanos[:int(len(gusanos)/2)]
         valor_SSE = getSSE(centroidesCandidatos,gusanos)
         interDist = getInterDist(centroidesCandidatos)
-
+        nom_arch_msjs = "GSOprogress.txt"
+        str_toWrite = ""
         
     centroidesCandidatos, valor_SSE, interDist, maxIntraD, gusanos = comm.bcast((centroidesCandidatos,valor_SSE,interDist,maxIntraD,gusanos),0)
     
     
     #while(condiciones): #PARALELIZAR ESTE CICLO TAL QUE ABARQUE SOLO UNA CANTIDAD ESPECIFICA DE GUSANOS
-    for k in range(0,5):
+    for k in range(0,NUMERODEITERACIONES):
+        gusanosEliminados = 0
+        centroidesEliminados = 0
+        t_inicio_iteracion = MPI.Wtime()
         newGusanos = []
         inicio = int(pid * (len(gusanos)/size))
         final = int(len(gusanos)/size + inicio)
@@ -508,11 +513,17 @@ def main(argv):
             gusanos[i].setIntraD(data)
             if(len(gusanos[i].getCCubierto()) > 0):
                 newGusanos.append(gusanos[i])
+            else:
+                gusanosEliminados += 1
         
         gusanos = newGusanos
         gusanos = comm.reduce(gusanos,op = MPI.SUM)
 
+        t_final_iteracion = MPI.Wtime()
+        t_total_iteracion = comm.reduce(t_final_iteracion-t_inicio_iteracion, op = MPI.MAX)
+
         if(pid == 0):
+            centroidesEliminados = len(centroidesCandidatos)
             gusanos = revisarCentroides(gusanos, 2)
             centroidesCandidatos = sacarCcPorFitness(gusanos)
             valor_SSE = getSSE(centroidesCandidatos,gusanos)
@@ -520,6 +531,17 @@ def main(argv):
             centroidesCandidatos = revisarCentroides(centroidesCandidatos, 2)
             print("Cant CC = ", len(centroidesCandidatos))
             print("Cant Gusanos = ", len(gusanos))
+            print(t_total_iteracion)
+            with open(nom_arch_msjs, 'w') as archivo:
+                str_toWrite += "Iteracion " + str(k) +  " tardó " + str(t_total_iteracion) + " segundos." + '\n' + "Cantidad de Centroides:" + str(len(centroidesCandidatos)) + '\n' + "Cantidad de gusanos: " + str(len(gusanos)) + '\n' + "Reduccion de " + str(gusanosEliminados) + " gusanos y " + str(centroidesEliminados - len(centroidesCandidatos)) + "\n --------------------------------------------------------------------------- \n"
+                archivo.write(str_toWrite)
+                archivo.close()
+            if(len(centroidesCandidatos) <= 10):
+                archivo.write("Centroides Finales: \n")
+                for i in centroidesCandidatos:
+                    str_toWrite += "Centroide " + str(i) + ": " + i.toString()
+                    archivo.write(str_toWrite)
+                archivo.close()
         centroidesCandidatos, valor_SSE, interDist, gusanos = comm.bcast((centroidesCandidatos,valor_SSE,interDist,gusanos),0)
         
 
