@@ -23,7 +23,7 @@ DIMENSION = 10
 DECREMENTOLUCIFERINA = 0.4
 INCREMENTOLUCIFERINA = 0.6
 CONSTANTEMOVIMIENTO = 0.9
-NUMERODEITERACIONES = 10
+NUMERODEITERACIONES = 100
 
 #Se encarga de recibir el valor de los parámetros por consola
 def getValores(argv):
@@ -364,12 +364,10 @@ def revisarCentroides(centroides, rs):
     for i in centroides:
         for j in centroides:
             if(distanciaEuc(i.getPos(), j.getPos()) < rs and i.getNLuciferina() > j.getNLuciferina()):
-                cCubiertoI = []
+                cCubiertoI = i.getCCubierto()
                 cCubiertoI = np.ndarray(cCubiertoI, dtype = int)
-                cCubiertoJ = []
+                cCubiertoJ = j.getCCubierto()
                 cCubiertoJ = np.ndarray(cCubiertoJ, dtype = int)
-                cCubiertoJ.append(j.getCCubierto())
-                cCubiertoI.append(i.getCCubierto())
                 cCubiertoI = np.concatenate(cCubiertoI,cCubiertoJ)
                 i.setCCubierto(cCubiertoI)
                 centroides.remove(j)
@@ -497,8 +495,6 @@ def main(argv):
     
     #while(condiciones): #PARALELIZAR ESTE CICLO TAL QUE ABARQUE SOLO UNA CANTIDAD ESPECIFICA DE GUSANOS
     for k in range(0,NUMERODEITERACIONES):
-        gusanosEliminados = 0
-        centroidesEliminados = 0
         t_inicio_iteracion = MPI.Wtime()
         newGusanos = []
         inicio = int(pid * (len(gusanos)/size))
@@ -513,8 +509,6 @@ def main(argv):
             gusanos[i].setIntraD(data)
             if(len(gusanos[i].getCCubierto()) > 0):
                 newGusanos.append(gusanos[i])
-            else:
-                gusanosEliminados += 1
         
         gusanos = newGusanos
         gusanos = comm.reduce(gusanos,op = MPI.SUM)
@@ -523,7 +517,6 @@ def main(argv):
         t_total_iteracion = comm.reduce(t_final_iteracion-t_inicio_iteracion, op = MPI.MAX)
 
         if(pid == 0):
-            centroidesEliminados = len(centroidesCandidatos)
             gusanos = revisarCentroides(gusanos, 2)
             centroidesCandidatos = sacarCcPorFitness(gusanos)
             valor_SSE = getSSE(centroidesCandidatos,gusanos)
