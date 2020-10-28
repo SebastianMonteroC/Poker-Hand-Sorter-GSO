@@ -23,7 +23,7 @@ DIMENSION = 10
 DECREMENTOLUCIFERINA = 0.4
 INCREMENTOLUCIFERINA = 0.6
 CONSTANTEMOVIMIENTO = 0.9
-NUMERODEITERACIONES = 5
+NUMERODEITERACIONES = 10
 
 #Se encarga de recibir el valor de los parámetros por consola
 def getValores(argv):
@@ -533,7 +533,7 @@ def main(argv):
             print("Cant Gusanos = ", len(gusanos))
             print(t_total_iteracion)
             with open(nom_arch_msjs, 'w') as archivo:
-                str_toWrite += "Iteracion " + str(k) +  " tardó " + str(t_total_iteracion) + " segundos." + '\n' + "Cantidad de Centroides:" + str(len(centroidesCandidatos)) + '\n' + "Cantidad de gusanos: " + str(len(gusanos)) + '\n' + "Reduccion de " + str(gusanosEliminados) + " gusanos y " + str(centroidesEliminados - len(centroidesCandidatos)) + "\n --------------------------------------------------------------------------- \n"
+                str_toWrite += "Iteracion " + str(k) +  " tardó " + str(t_total_iteracion) + " segundos." + '\n' + "Cantidad de Centroides:" + str(len(centroidesCandidatos)) + '\n' + "Cantidad de gusanos: " + str(len(gusanos)) + '\n' + "\n --------------------------------------------------------------------------- \n"
                 archivo.write(str_toWrite)
                 archivo.close()
             if(len(centroidesCandidatos) <= 10):
